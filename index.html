@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ahorrito Dino-Game Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #7c3aed;
+            --dino-gold: #f59e0b;
+            --bg-dark: #0f172a;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e1b4b;
+            user-select: none;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode { background-color: var(--bg-dark); color: #f1f5f9; }
+
+        /* --- ESTILOS DE LA TIENDA --- */
+        .shop-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dark-mode .shop-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-color: #334155;
+        }
+        .shop-card.locked { opacity: 0.7; filter: grayscale(1); }
+        .shop-card.owned { border-color: var(--dino-gold); box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+
+        .dino-coin-spin {
+            animation: spin 3s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotateY(360deg); } }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .dark-mode .glass-nav { background: rgba(15, 23, 42, 0.85); border-top: 1px solid #334155; }
+
+        /* --- ANIMACIÓN ANUNCIO --- */
+        #ad-overlay {
+            background: rgba(0,0,0,0.95);
+            display: none;
+            z-index: 500;
+        }
+
+        .limit-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .limit-fill {
+            height: 100%;
+            background: var(--dino-gold);
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <div id="splash" class="fixed inset-0 z-[1000] bg-violet-700 flex flex-col items-center justify-center transition-all duration-700">
+        <div class="relative">
+            <i class="fa-solid fa-dragon text-7xl text-white dino-coin-spin"></i>
+            <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-400 rounded-full border-4 border-violet-700"></div>
+        </div>
+        <h1 class="text-white text-4xl font-black mt-6 tracking-tighter italic">DINO-AHORRO PRO</h1>
+        <p class="text-violet-200 text-[10px] font-bold tracking-[0.4em] uppercase mt-2">Andy Silva • Piura 2026</p>
+    </div>
+
+    <div id="ad-overlay" class="fixed inset-0 flex flex-col items-center justify-center p-10 text-center">
+        <i class="fa-solid fa-film text-6xl text-amber-500 mb-6 animate-bounce"></i>
+        <h2 class="text-2xl font-black text-white">Cargando video premiado...</h2>
+        <p class="text-slate-400 mt-2">Obtendrás +50 Dino-Points al finalizar</p>
+        <div class="mt-10 w-full max-w-xs bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div id="ad-progress" class="h-full bg-amber-500 w-0 transition-all duration-[5000ms] linear"></div>
+        </div>
+        <p id="ad-timer" class="text-white font-black mt-4 text-3xl">5</p>
+    </div>
+
+    <header class="glass-nav p-6 flex justify-between items-center z-50 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <i class="fa-solid fa-dragon text-white text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span id="header-points" class="text-2xl font-black text-amber-600 leading-none">0</span>
+                    <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md uppercase">Pts</span>
+                </div>
+                <p id="user-level" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nivel 1: Atleta Novato</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="switchTab('shop')" class="w-11 h-11 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-amber-500 active:scale-90 transition-all">
+                <i class="fa-solid fa-store"></i>
+            </button>
+            <button onclick="toggleDarkMode()" class="w-11 h-11 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 active:scale-90 transition-all">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto pb-28">
+        
+        <section id="tab-inicio" class="p-6 space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-50 dark:border-slate-700">
+                <div class="flex justify-between items-end mb-3">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase">Energía de Puntos hoy</p>
+                        <h4 class="text-sm font-black dark:text-white">Progreso Diario</h4>
+                    </div>
+                    <p id="daily-text" class="text-xs font-black text-amber-600">0 / 100</p>
+                </div>
+                <div class="limit-bar">
+                    <div id="daily-fill" class="limit-fill" style="width: 0%"></div>
+                </div>
+                <div id="ad-reward-box" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button onclick="showAd()" class="w-full bg-amber-500 text-white font-black py-3 rounded-2xl flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-lg shadow-amber-200">
+                        <i class="fa-solid fa-circle-play"></i> Recargar +50 Puntos (Video)
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-violet-600 to-indigo-800 p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden">
+                <p class="text-violet-200 text-xs font-bold uppercase tracking-[0.2em] mb-1">Millas Acumuladas</p>
+                <h2 id="total-saved-text" class="text-5xl font-black tracking-tighter">S/ 0.00</h2>
+                <div class="mt-6 flex gap-2">
+                    <span class="text-[9px] bg-white/20 px-3 py-1 rounded-full font-black uppercase tracking-widest">Piura Atleta</span>
+                    <span id="streak-badge" class="hidden text-[9px] bg-orange-500 px-3 py-1 rounded-full font-black uppercase tracking-widest">🔥 <span id="streak-val">0</span> Días</span>
+                </div>
+                <i class="fa-solid fa-person-running absolute -right-4 -bottom-4 text-white/10 text-9xl italic"></i>
+            </div>
+
+            <div id="goals-container" class="grid grid-cols-1 gap-4">
+                </div>
+            
+            <button onclick="openGoalModal()" class="w-full py-8 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2.5rem] text-slate-400 flex flex-col items-center gap-2 active:scale-95 transition-all">
+                <i class="fa-solid fa-plus-circle text-2xl"></i>
+                <span class="text-xs font-black uppercase tracking-widest">Añadir Nueva Meta</span>
+            </button>
+        </section>
+
+        <section id="tab-shop" class="hidden p-6 space-y-6">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h2 class="text-3xl font-black dark:text-white leading-none">Dino-Tienda</h2>
+                    <p class="text-xs font-bold text-slate-400 uppercase mt-1">Canjea tus Dino-Points</p>
+                </div>
+                <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 text-xl font-black">🦖</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div id="item-dark" class="shop-card p-5 rounded-[2rem] flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-lg">
+                        <i class="fa-solid fa-moon"></i>
+                    </div>
+                    <h4 class="text-xs font-black uppercase leading-tight mb-2">Modo Nocturno Pro</h4>
+                    <p class="text-[9px] text-slate-400 mb-4 font-medium">Relaja tu vista al ahorrar</p>
+                    <button onclick="buyItem('dark', 0)" id="btn-buy-dark" class="w-full py-2 bg-violet-600 text-white rounded-xl text-[10px] font-black uppercase">GRATIS</button>
+                </div>
+
+                <div id="item-badge-gold" class="shop-card p-5 rounded-[2rem] flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-amber-500 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-lg">
+                        <i class="fa-solid fa-certificate"></i>
+                    </div>
+                    <h4 class="text-xs font-black uppercase leading-tight mb-2">Insignia Dorada</h4>
+                    <p class="text-[9px] text-slate-400 mb-4 font-medium">Luce oro en el Ranking</p>
+                    <button onclick="buyItem('badge-gold', 500)" id="btn-buy-badge-gold" class="w-full py-2 bg-amber-500 text-white rounded-xl text-[10px] font-black uppercase tracking-tighter">500 PTS</button>
+                </div>
+
+                <div id="item-theme-blue" class="shop-card p-5 rounded-[2rem] flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-lg">
+                        <i class="fa-solid fa-palette"></i>
+                    </div>
+                    <h4 class="text-xs font-black uppercase leading-tight mb-2">Tema Océano</h4>
+                    <p class="text-[9px] text-slate-400 mb-4 font-medium">Cambia el color de la App</p>
+                    <button onclick="buyItem('theme-blue', 1000)" id="btn-buy-theme-blue" class="w-full py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-tighter">1,000 PTS</button>
+                </div>
+
+                <div id="item-confetti-fire" class="shop-card p-5 rounded-[2rem] flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center text-white text-2xl mb-4 shadow-lg">
+                        <i class="fa-solid fa-fire-flame-curved"></i>
+                    </div>
+                    <h4 class="text-xs font-black uppercase leading-tight mb-2">Confeti de Fuego</h4>
+                    <p class="text-[9px] text-slate-400 mb-4 font-medium">Efecto épico al ganar</p>
+                    <button onclick="buyItem('confetti-fire', 2500)" id="btn-buy-confetti-fire" class="w-full py-2 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-tighter">2,500 PTS</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-stats" class="hidden p-6 space-y-6">
+            <h2 class="text-3xl font-black dark:text-white">Top Global 🏆</h2>
+            <div id="global-ranking-container" class="space-y-3">
+                </div>
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm">
+                <h3 class="text-xs font-black text-slate-400 uppercase mb-4 text-center">Tu rendimiento</h3>
+                <canvas id="mainChart" style="max-height: 200px;"></canvas>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 glass-nav border-t border-slate-100 p-5 flex justify-around items-center z-50">
+        <button onclick="switchTab('inicio')" id="nav-inicio" class="text-violet-600 flex flex-col items-center gap-1.5 scale-110 transition-all">
+            <i class="fa-solid fa-house-chimney text-xl"></i>
+            <span class="text-[8px] font-black uppercase tracking-tighter">Inicio</span>
+        </button>
+        <button onclick="switchTab('shop')" id="nav-shop" class="text-slate-300 flex flex-col items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-basket-shopping text-xl"></i>
+            <span class="text-[8px] font-black uppercase tracking-tighter">Tienda</span>
+        </button>
+        <button onclick="switchTab('stats')" id="nav-stats" class="text-slate-300 flex flex-col items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-award text-xl"></i>
+            <span class="text-[8px] font-black uppercase tracking-tighter">Top</span>
+        </button>
+    </nav>
+
+    <div id="goalModal" class="fixed inset-0 z-[200] hidden flex items-end justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('goalModal')"></div>
+        <div class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-[3rem] p-8 animate-slide-up shadow-2xl">
+            <h3 id="modalTitle" class="text-2xl font-black text-violet-950 dark:text-white mb-6">Nuevo Objetivo</h3>
+            <form id="goalForm" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Nombre</label>
+                    <input type="text" id="goal-title" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl font-bold outline-none dark:text-white" placeholder="Ej: Zapatillas Nike" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Meta S/</label>
+                        <input type="number" id="goal-target" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl font-bold outline-none dark:text-white" placeholder="0.00" required>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Icono</label>
+                        <select id="goal-icon" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl font-bold outline-none dark:text-white">
+                            <option>👟</option><option>🏆</option><option>🍎</option><option>🏃</option><option>👕</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">URL Foto (Opcional)</label>
+                    <input type="url" id="goal-img" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl font-medium outline-none dark:text-white text-xs" placeholder="https://...">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal('goalModal')" class="flex-1 py-4 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 text-slate-500 font-black rounded-2xl text-xs uppercase">Cancelar</button>
+                    <button type="submit" class="flex-[2] py-4 bg-violet-600 text-white font-black rounded-2xl shadow-xl shadow-violet-200 text-xs uppercase">Guardar Meta</button>
+                </div>
+                <button type="button" id="delete-btn" class="hidden w-full text-red-400 text-[10px] font-black uppercase mt-4">Eliminar Meta para siempre</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="moneyModal" class="fixed inset-0 z-[200] hidden flex items-end justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('moneyModal')"></div>
+        <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-t-[3rem] p-10 shadow-2xl">
+            <div class="text-center mb-6">
+                <span id="money-goal-icon" class="text-5xl mb-2 block">👟</span>
+                <h3 id="money-goal-title" class="text-2xl font-black dark:text-white uppercase tracking-tighter">Meta</h3>
+            </div>
+            <input type="number" id="money-input" class="w-full p-8 text-center text-5xl font-black bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] outline-none dark:text-amber-500 mb-8" placeholder="0.00">
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="handleMoney('add')" class="bg-violet-600 text-white font-black py-6 rounded-3xl shadow-xl active:scale-95 transition-all uppercase text-xs">Ahorrar</button>
+                <button onclick="handleMoney('withdraw')" class="bg-red-500 text-white font-black py-6 rounded-3xl shadow-xl active:scale-95 transition-all uppercase text-xs">Retirar</button>
+            </div>
+            <button onclick="editCurrentGoal()" class="w-full mt-6 text-[10px] font-black text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-pen-to-square"></i> Editar detalles</button>
+        </div>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS Y ESTADO ---
+        const DB_KEY = "ahorrito_v2026_final_mega";
+        const INITIAL_STATE = {
+            points: 0,
+            dailyPoints: 0,
+            lastLoginDate: new Date().toDateString(),
+            inventory: ['dark'],
+            activeTheme: 'default',
+            goals: [],
+            streak: 0,
+            lastAhorroDate: null,
+            darkMode: false
+        };
+
+        let state = JSON.parse(localStorage.getItem(DB_KEY)) || INITIAL_STATE;
+        let activeGoalId = null;
+
+        // --- LÓGICA DE INICIO ---
+        function init() {
+            // Verificar cambio de día
+            const hoy = new Date().toDateString();
+            if (state.lastLoginDate !== hoy) {
+                state.dailyPoints = 0;
+                state.lastLoginDate = hoy;
+            }
+
+            applyCurrentTheme();
+            render();
+            
+            setTimeout(() => {
+                document.getElementById('splash').style.opacity = '0';
+                setTimeout(() => document.getElementById('splash').style.display = 'none', 700);
+            }, 3000);
+        }
+
+        function save() {
+            localStorage.setItem(DB_KEY, JSON.stringify(state));
+            render();
+        }
+
+        // --- GESTIÓN DE PUNTOS Y TIENDA ---
+        function addPoints(amount) {
+            const MAX_DIARIO = 100;
+            if (state.dailyPoints + amount > MAX_DIARIO) {
+                const extra = MAX_DIARIO - state.dailyPoints;
+                if(extra > 0) {
+                    state.points += extra;
+                    state.dailyPoints += extra;
+                }
+                document.getElementById('ad-reward-box').classList.remove('hidden');
+                return;
+            }
+            state.points += amount;
+            state.dailyPoints += amount;
+            save();
+        }
+
+        function buyItem(id, price) {
+            if (state.inventory.includes(id)) {
+                alert("¡Ya tienes este objeto!");
+                return;
+            }
+            if (state.points < price) {
+                alert("Te faltan " + (price - state.points) + " Dino-Points. ¡Sigue ahorrando!");
+                return;
+            }
+
+            state.points -= price;
+            state.inventory.push(id);
+            save();
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            alert("¡Compra exitosa! Revisa tus ajustes para activar nuevos temas.");
+        }
+
+        function showAd() {
+            const overlay = document.getElementById('ad-overlay');
+            const progress = document.getElementById('ad-progress');
+            const timer = document.getElementById('ad-timer');
+            
+            overlay.style.display = 'flex';
+            progress.style.width = '100%';
+            
+            let count = 5;
+            const interval = setInterval(() => {
+                count--;
+                timer.innerText = count;
+                if(count <= 0) {
+                    clearInterval(interval);
+                    overlay.style.display = 'none';
+                    state.dailyPoints = 0; // Reseteamos límite
+                    state.points += 50;   // Recompensa
+                    document.getElementById('ad-reward-box').classList.add('hidden');
+                    save();
+                    alert("¡Energía recargada! Ganaste +50 Puntos Extra.");
+                }
+            }, 1000);
+        }
+
+        // --- NAVEGACIÓN ---
+        function switchTab(t) {
+            ['inicio', 'shop', 'stats'].forEach(tab => {
+                document.getElementById('tab-' + tab).classList.add('hidden');
+                document.getElementById('nav-' + tab).classList.remove('text-violet-600', 'scale-110');
+                document.getElementById('nav-' + tab).classList.add('text-slate-300');
+            });
+            document.getElementById('tab-' + t).classList.remove('hidden');
+            document.getElementById('nav-' + t).classList.add('text-violet-600', 'scale-110');
+            document.getElementById('nav-' + t).classList.remove('text-slate-300');
+            
+            if(t === 'stats') renderRanking();
+        }
+
+        // --- GESTIÓN DE METAS ---
+        function openGoalModal(editId = null) {
+            const form = document.getElementById('goalForm');
+            const delBtn = document.getElementById('delete-btn');
+            form.reset();
+            
+            if(editId) {
+                const g = state.goals.find(x => x.id === editId);
+                document.getElementById('modalTitle').innerText = "Editar Detalles";
+                document.getElementById('edit-id').value = g.id;
+                document.getElementById('goal-title').value = g.title;
+                document.getElementById('goal-target').value = g.target;
+                document.getElementById('goal-icon').value = g.icon;
+                document.getElementById('goal-img').value = g.img || "";
+                delBtn.classList.remove('hidden');
+                delBtn.onclick = () => deleteGoal(g.id);
+            } else {
+                document.getElementById('modalTitle').innerText = "Nueva Meta";
+                document.getElementById('edit-id').value = "";
+                delBtn.classList.add('hidden');
+            }
+            openModal('goalModal');
+        }
+
+        function deleteGoal(id) {
+            if(confirm("¿Eliminar esta meta?")) {
+                state.goals = state.goals.filter(x => x.id !== id);
+                save();
+                closeModal('goalModal');
+                closeModal('moneyModal');
+            }
+        }
+
+        document.getElementById('goalForm').onsubmit = (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const newGoal = {
+                id: id ? parseInt(id) : Date.now(),
+                title: document.getElementById('goal-title').value,
+                target: parseFloat(document.getElementById('goal-target').value),
+                icon: document.getElementById('goal-icon').value,
+                img: document.getElementById('goal-img').value,
+                saved: id ? state.goals.find(x => x.id == id).saved : 0
+            };
+
+            if(id) {
+                const idx = state.goals.findIndex(x => x.id == id);
+                state.goals[idx] = newGoal;
+            } else {
+                state.goals.push(newGoal);
+            }
+            save();
+            closeModal('goalModal');
+        };
+
+        // --- MANEJO DE DINERO ---
+        function openMoneyModal(id) {
+            activeGoalId = id;
+            const g = state.goals.find(x => x.id === id);
+            document.getElementById('money-goal-title').innerText = g.title;
+            document.getElementById('money-goal-icon').innerText = g.icon;
+            document.getElementById('money-input').value = "";
+            openModal('moneyModal');
+        }
+
+        function handleMoney(type) {
+            const val = parseFloat(document.getElementById('money-input').value);
+            if(!val || val <= 0) return;
+
+            const g = state.goals.find(x => x.id === activeGoalId);
+            if(type === 'add') {
+                g.saved += val;
+                addPoints(Math.floor(val)); // 1 sol = 1 punto
+                updateStreak();
+                if(g.saved >= g.target) confetti({ particleCount: 150, spread: 70 });
+            } else {
+                if(g.saved < val) return alert("No tienes tanto dinero en esta meta.");
+                g.saved -= val;
+            }
+            save();
+            closeModal('moneyModal');
+        }
+
+        function editCurrentGoal() {
+            closeModal('moneyModal');
+            openGoalModal(activeGoalId);
+        }
+
+        // --- RENDERIZADO UI ---
+        function render() {
+            // Puntos y Header
+            document.getElementById('header-points').innerText = state.points.toLocaleString();
+            document.getElementById('daily-text').innerText = `${state.dailyPoints} / 100`;
+            document.getElementById('daily-fill').style.width = Math.min(100, state.dailyPoints) + '%';
+            
+            // Nivel
+            let level = "Novato";
+            if(state.points > 500) level = "Atleta Amateur";
+            if(state.points > 2000) level = "Dino-Corredor";
+            if(state.points > 5000) level = "Leyenda de Piura";
+            document.getElementById('user-level').innerText = `Nivel: ${level}`;
+
+            // Metas
+            const container = document.getElementById('goals-container');
+            container.innerHTML = "";
+            let total = 0;
+
+            state.goals.forEach(g => {
+                total += g.saved;
+                const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
+                const imgHtml = g.img ? `<img src="${g.img}" class="w-full h-24 object-cover rounded-2xl mb-4">` : '';
+                
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-slate-800 p-6 rounded-[2.5rem] border border-slate-50 dark:border-slate-700 shadow-sm active:scale-[0.98] transition-all";
+                card.onclick = () => openMoneyModal(g.id);
+                card.innerHTML = `
+                    ${imgHtml}
+                    <div class="flex items-center gap-4">
+                        <div class="text-3xl">${g.icon}</div>
+                        <div class="flex-1">
+                            <h4 class="font-black text-sm dark:text-white uppercase truncate w-32">${g.title}</h4>
+                            <p class="text-[10px] font-bold text-slate-400">S/ ${g.saved} de S/ ${g.target}</p>
+                        </div>
+                        <div class="text-xl font-black text-violet-600">${pct}%</div>
+                    </div>
+                    <div class="mt-4 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-violet-600 transition-all duration-1000" style="width: ${pct}%"></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('total-saved-text').innerText = `S/ ${total.toLocaleString()}`;
+            
+            // Racha
+            const sBadge = document.getElementById('streak-badge');
+            if(state.streak > 0) {
+                sBadge.classList.remove('hidden');
+                document.getElementById('streak-val').innerText = state.streak;
+            }
+
+            // Actualizar Inventario Tienda
+            updateShopUI();
+        }
+
+        function updateShopUI() {
+            state.inventory.forEach(itemId => {
+                const card = document.getElementById(`item-${itemId}`);
+                if(card) {
+                    card.classList.add('owned');
+                    const btn = document.getElementById(`btn-buy-${itemId}`);
+                    btn.innerText = "OBTENIDO";
+                    btn.className = "w-full py-2 bg-slate-200 dark:bg-slate-700 text-slate-400 rounded-xl text-[10px] font-black cursor-not-allowed";
+                }
+            });
+        }
+
+        function renderRanking() {
+            const cont = document.getElementById('global-ranking-container');
+            const data = [
+                { name: "Andy Silva", pts: state.points, me: true },
+                { name: "Carlos_26", pts: 2450, me: false },
+                { name: "Runner_Piura", pts: 1200, me: false },
+                { name: "Dino_Ahorro", pts: 800, me: false }
+            ].sort((a,b) => b.pts - a.pts);
+
+            cont.innerHTML = "";
+            data.forEach((u, i) => {
+                const isGold = u.me && state.inventory.includes('badge-gold');
+                cont.innerHTML += `
+                    <div class="flex items-center justify-between p-4 rounded-2xl ${u.me ? 'bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800' : 'bg-white dark:bg-slate-800'}">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-black text-slate-400">#${i+1}</span>
+                            <span class="text-xs font-black dark:text-white">${u.name} ${isGold ? '⭐' : ''}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-amber-600">${u.pts}</span>
+                            <div class="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-[8px] text-white"><i class="fa-solid fa-dragon"></i></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- EXTRAS ---
+        function updateStreak() {
+            const hoy = new Date().toDateString();
+            if(state.lastAhorroDate !== hoy) {
+                state.streak++;
+                state.lastAhorroDate = hoy;
+            }
+        }
+
+        function toggleDarkMode() {
+            if(!state.inventory.includes('dark')) {
+                alert("Debes 'comprar' el Modo Nocturno en la tienda (¡Es gratis!).");
+                return;
+            }
+            state.darkMode = !state.darkMode;
+            applyCurrentTheme();
+            save();
+        }
+
+        function applyCurrentTheme() {
+            if(state.darkMode) document.body.classList.add('dark-mode');
+            else document.body.classList.remove('dark-mode');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
