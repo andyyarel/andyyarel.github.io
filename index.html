@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3416438837427835" crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ahorrito Dino-Game Edition</title>
+    <title>Ahorrito</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -80,8 +81,8 @@
             <i class="fa-solid fa-dragon text-7xl text-white dino-coin-spin"></i>
             <div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-400 rounded-full border-4 border-violet-700"></div>
         </div>
-        <h1 class="text-white text-4xl font-black mt-6 tracking-tighter italic">DINO-AHORRO PRO</h1>
-        <p class="text-violet-200 text-[10px] font-bold tracking-[0.4em] uppercase mt-2">Andy Silva • Piura 2026</p>
+        <h1 class="text-white text-4xl font-black mt-6 tracking-tighter italic">Ahorrito</h1>
+        <p class="text-violet-200 text-[10px] font-bold tracking-[0.4em] uppercase mt-2"></p>
     </div>
 
     <div id="ad-overlay" class="fixed inset-0 flex flex-col items-center justify-center p-10 text-center">
@@ -104,7 +105,7 @@
                     <span id="header-points" class="text-2xl font-black text-amber-600 leading-none">0</span>
                     <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md uppercase">Pts</span>
                 </div>
-                <p id="user-level" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nivel 1: Atleta Novato</p>
+                <p id="user-level" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nivel 1:Novato</p>
             </div>
         </div>
         <div class="flex gap-2">
@@ -142,7 +143,7 @@
                 <p class="text-violet-200 text-xs font-bold uppercase tracking-[0.2em] mb-1">Millas Acumuladas</p>
                 <h2 id="total-saved-text" class="text-5xl font-black tracking-tighter">S/ 0.00</h2>
                 <div class="mt-6 flex gap-2">
-                    <span class="text-[9px] bg-white/20 px-3 py-1 rounded-full font-black uppercase tracking-widest">Piura Atleta</span>
+                    <span class="text-[9px] bg-white/20 px-3 py-1 rounded-full font-black uppercase tracking-widest">Tu puedes</span>
                     <span id="streak-badge" class="hidden text-[9px] bg-orange-500 px-3 py-1 rounded-full font-black uppercase tracking-widest">🔥 <span id="streak-val">0</span> Días</span>
                 </div>
                 <i class="fa-solid fa-person-running absolute -right-4 -bottom-4 text-white/10 text-9xl italic"></i>
@@ -240,7 +241,7 @@
                 <input type="hidden" id="edit-id">
                 <div class="space-y-1">
                     <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Nombre</label>
-                    <input type="text" id="goal-title" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl font-bold outline-none dark:text-white" placeholder="Ej: Zapatillas Nike" required>
+                    <input type="text" id="goal-title" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl font-bold outline-none dark:text-white" placeholder="Escribe tu meta" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
@@ -250,7 +251,7 @@
                     <div class="space-y-1">
                         <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Icono</label>
                         <select id="goal-icon" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl font-bold outline-none dark:text-white">
-                            <option>👟</option><option>🏆</option><option>🍎</option><option>🏃</option><option>👕</option>
+                            <option>🏍</option><option>🚲</option><option>🚗</option><option>🏎</option><option>🎯</option>
                         </select>
                     </div>
                 </div>
@@ -271,7 +272,7 @@
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('moneyModal')"></div>
         <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-t-[3rem] p-10 shadow-2xl">
             <div class="text-center mb-6">
-                <span id="money-goal-icon" class="text-5xl mb-2 block">👟</span>
+                <span id="money-goal-icon" class="text-5xl mb-2 block">🎯</span>
                 <h3 id="money-goal-title" class="text-2xl font-black dark:text-white uppercase tracking-tighter">Meta</h3>
             </div>
             <input type="number" id="money-input" class="w-full p-8 text-center text-5xl font-black bg-slate-50 dark:bg-slate-800 rounded-[2.5rem] outline-none dark:text-amber-500 mb-8" placeholder="0.00">
@@ -359,28 +360,29 @@
         }
 
         function showAd() {
-            const overlay = document.getElementById('ad-overlay');
-            const progress = document.getElementById('ad-progress');
-            const timer = document.getElementById('ad-timer');
-            
-            overlay.style.display = 'flex';
-            progress.style.width = '100%';
-            
-            let count = 5;
-            const interval = setInterval(() => {
-                count--;
-                timer.innerText = count;
-                if(count <= 0) {
-                    clearInterval(interval);
-                    overlay.style.display = 'none';
-                    state.dailyPoints = 0; // Reseteamos límite
-                    state.points += 50;   // Recompensa
-                    document.getElementById('ad-reward-box').classList.add('hidden');
-                    save();
-                    alert("¡Energía recargada! Ganaste +50 Puntos Extra.");
-                }
-            }, 1000);
-        }
+    // 1. Mensaje de carga para el usuario
+    alert("Cargando anuncio... Espera un momento.");
+
+    // 2. Llamada al anuncio de Google
+    // ca-app-pub-3416438837427835~6797298743
+    (adsbygoogle = window.adsbygoogle || []).push({
+        google_ad_client: "ca-app-pub-3416438837427835~6797298743",
+        enable_page_level_ads: true
+    });
+
+    // 3. Lógica de recompensa
+    // Nota: Por ahora mantenemos la lógica de puntos, 
+    // pero Google lo activará cuando detecte el video terminado
+    setTimeout(() => {
+        state.dailyPoints = 0; // Se libera el límite diario
+        state.points += 50;    // Regalo de 50 puntos
+        document.getElementById('ad-reward-box').classList.add('hidden');
+        save();
+        render(); 
+        confetti({ particleCount: 150, spread: 70 });
+        alert("¡Anuncio completado! Tienes +50 Dino-Points y energía recargada.");
+    }, 2000); // Esto es temporal mientras Google procesa tu cuenta
+}
 
         // --- NAVEGACIÓN ---
         function switchTab(t) {
