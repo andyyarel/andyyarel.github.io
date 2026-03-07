@@ -360,28 +360,25 @@
         }
 
         function showAd() {
-    // 1. Mensaje de carga para el usuario
-    alert("Cargando anuncio... Espera un momento.");
+    // 1. Mostrar aviso al usuario
+    alert("Se abrirá una publicidad. ¡No cierres el juego! Recibirás tus puntos en 5 segundos.");
 
-    // 2. Llamada al anuncio de Google
-    // ca-app-pub-3416438837427835~6797298743
-    (adsbygoogle = window.adsbygoogle || []).push({
-        google_ad_client: "ca-pub-3416438837427835",
-        enable_page_level_ads: true
-    });
+    // 2. Abrir tu link de Adsterra en una pestaña nueva
+    window.open("https://www.effectivegatecpm.com/xwg0g6kn?key=687959318c0230138c277db3e9745801", "_blank");
 
-    // 3. Lógica de recompensa
-    // Nota: Por ahora mantenemos la lógica de puntos, 
-    // pero Google lo activará cuando detecte el video terminado
+    // 3. Esperar 5 segundos para dar la recompensa
     setTimeout(() => {
-        state.dailyPoints = 0; // Se libera el límite diario
-        state.points += 50;    // Regalo de 50 puntos
-        document.getElementById('ad-reward-box').classList.add('hidden');
-        save();
-        render(); 
-        confetti({ particleCount: 150, spread: 70 });
-        alert("¡Anuncio completado! Tienes +50 Dino-Points y energía recargada.");
-    }, 2000); // Esto es temporal mientras Google procesa tu cuenta
+        // Sumar los puntos
+        puntos += 50;
+        
+        // Actualizar la pantalla del juego
+        actualizarPantalla();
+        
+        // Efecto de celebración (si lo tienes configurado)
+        if (typeof confeti === "function") confeti();
+
+        alert("¡Felicidades! Has recibido +50 puntos por apoyar el juego.");
+    }, 5000);
 }
 
         // --- NAVEGACIÓN ---
@@ -613,4 +610,5 @@
     </script>
 </body>
 </html>
+
 
